@@ -1,0 +1,12 @@
+# environments
+.venv/
+.pixi/
+
+# written by the notebooks while they run
+notebooks/data/
+notebooks/*_model.py
+notebooks/*_parallel.py
+notebooks/solve_*.py
+notebooks/toy.*.parquet
+notebooks/__pycache__/
+.ipynb_checkpoints/

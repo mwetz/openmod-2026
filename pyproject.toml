@@ -1,0 +1,75 @@
+[project]
+name = "pipsipmpp-workshop"
+version = "2026.10.0"
+description = "Hands-on material for PIPS-IPM++ and its Python interface pipsipmpp"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Installs everywhere. On Linux x86_64 it carries the solver; elsewhere it is the
+    # pure-Python wheel, which builds, annotates, writes and reads problems.
+    "pipsipmpp>=0.1.1",
+
+    # Finds a block structure in a model that states none. Pulls in mt-KaHyPar on
+    # Linux and macOS; there is no Windows build of it, so no hypergraph method there.
+    "pipstools>=0.3.1",
+
+    # Modelling frameworks. The PIPS-IPM++ backends of linopy and Pyomo are not
+    # upstream yet and come from forks. PyPSA 1.3 needs linopy>=0.9, the fork is 0.8.
+    "linopy @ git+https://github.com/mwetz/linopy.git@v0.8.0-beta",
+    "pyomo @ git+https://github.com/mwetz/pyomo.git@pipsipmpp-integration",
+    "gamspy",
+    "pypsa>=1.2.2,<1.3",
+
+    # Notebooks and the analysis in them
+    "jupyterlab",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "polars",
+    "scipy",
+    "xarray",
+]
+
+[project.optional-dependencies]
+# Solving needs MPI, even on a single process. Only Linux x86_64 has the solver, and
+# the Open MPI runtime from PyPI does not exist for Windows, so this extra is empty
+# everywhere else. Opt in with:  uv sync --extra solver   /   pixi run -e solver lab
+solver = [
+    "pipsipmpp[solver]>=0.1.1 ; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "openmpi ; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+# PyOptInterface's backend is also a fork, and it compiles from source, so it needs
+# a C++ toolchain. Opt in only if you want exercise 01c.
+pyoptinterface = [
+    "pyoptinterface @ git+https://github.com/mwetz/PyOptInterface.git@pipsipmpp-integration",
+]
+
+# ---------------------------------------------------------------------------- uv
+[tool.uv]
+# only the dependencies are installed; the workshop itself is not a package
+package = false
+
+# -------------------------------------------------------------------------- pixi
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+# the forks are fetched from GitHub
+git = "*"
+
+# the optional-dependencies group above becomes the pixi feature of the same name;
+# conda-forge supplies the compiler it needs, so no system toolchain is required
+[tool.pixi.feature.pyoptinterface.dependencies]
+cxx-compiler = "*"
+cmake = "*"
+ninja = "*"
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+solver = { features = ["solver"], solve-group = "default" }
+pyoptinterface = { features = ["pyoptinterface", "solver"], solve-group = "default" }
+
+[tool.pixi.tasks]
+lab = { cmd = "jupyter lab", cwd = "notebooks" }
